@@ -212,7 +212,10 @@ def serialList():
     additionalPorts = settings().get(["serial", "additionalPorts"])
     if additionalPorts:
         for additional in additionalPorts:
-            candidates += glob.glob(additional)
+            if "://" in additional:
+                candidates += [additional]
+            else:
+                candidates += glob.glob(additional)
 
     hooks = octoprint.plugin.plugin_manager().get_hooks(
         "octoprint.comm.transport.serial.additional_port_names"
@@ -3776,8 +3779,9 @@ class MachineCom:
                 serial_port_args["exclusive"] = True
 
             try:
-                serial_obj = serial.Serial(**serial_port_args)
-                serial_obj.port = str(p)
+                serial_obj = serial.serial_for_url(str(p), do_not_open=True, **serial_port_args)
+                #serial_obj = serial.Serial(**serial_port_args)
+                #serial_obj.port = str(p)
 
                 use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
                 needs_parity_workaround = get_os() == "linux" and os.path.exists(
